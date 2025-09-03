@@ -1,0 +1,61 @@
+@page "/register"
+@inject ExTrace.Shared.Services.IAuthService AuthService
+@inject NavigationManager Nav
+
+<h1>Register</h1>
+
+<EditForm Model="model" OnValidSubmit="HandleRegisterAsync">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label>Email</label>
+        <InputText class="form-control" @bind-Value="model.Email" />
+    </div>
+    <div class="mb-3">
+        <label>Password</label>
+        <InputText type="password" class="form-control" @bind-Value="model.Password" />
+    </div>
+
+    <button class="btn btn-primary" disabled="@isBusy">Register</button>
+    @if (!string.IsNullOrEmpty(error))
+    {
+        <div class="text-danger mt-2">@error</div>
+    }
+</EditForm>
+
+@code {
+    private Model model = new();
+    private bool isBusy;
+    private string? error;
+
+    private async Task HandleRegisterAsync()
+    {
+        isBusy = true;
+        error = null;
+        try
+        {
+            var ok = await AuthService.RegisterAsync(model.Email, model.Password);
+            if (ok)
+            {
+                Nav.NavigateTo("/login");
+            }
+            else
+            {
+                error = "Registration failed.";
+            }
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private class Model
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+}
+
+

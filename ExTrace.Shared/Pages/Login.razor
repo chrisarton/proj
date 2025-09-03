@@ -1,0 +1,71 @@
+@page "/login"
+@using ExTrace.Shared.Services
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
+
+<h1>Login</h1>
+
+<EditForm Model="loginModel" OnValidSubmit="HandleLoginAsync">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label>Email</label>
+        <InputText class="form-control" @bind-Value="loginModel.Email" />
+    </div>
+    <div class="mb-3">
+        <label>Password</label>
+        <InputText type="password" class="form-control" @bind-Value="loginModel.Password" />
+    </div>
+
+    <button class="btn btn-primary" disabled="@isBusy">Login</button>
+    @if (!string.IsNullOrEmpty(error))
+    {
+        <div class="text-danger mt-2">@error</div>
+    }
+</EditForm>
+
+@code {
+    private LoginModel loginModel = new();
+    private bool isBusy;
+    private string? error;
+
+    [Inject] public IAuthService AuthService { get; set; } = default!;
+
+    private async Task HandleLoginAsync()
+    {
+        isBusy = true;
+        error = null;
+        try
+        {
+            var success = false;
+  
+            success = await AuthService.LoginAsync(loginModel.Email, loginModel.Password);
+
+            if (success)
+            {
+                if (AuthStateProvider is ExTrace.Shared.Services.JwtAuthenticationStateProvider jwtProvider)
+                {
+                    jwtProvider.NotifyAuthenticationStateChangedTrigger();
+                }
+                Nav.NavigateTo("/");
+            }
+            else
+            {
+                error = "Invalid login.";
+            }
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    public class LoginModel
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+}
+
+
